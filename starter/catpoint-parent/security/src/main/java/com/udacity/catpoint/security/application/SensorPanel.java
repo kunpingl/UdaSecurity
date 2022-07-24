@@ -1,5 +1,6 @@
 package com.udacity.catpoint.security.application;
 
+import com.udacity.catpoint.security.data.AlarmStatus;
 import com.udacity.catpoint.security.data.Sensor;
 import com.udacity.catpoint.security.data.SensorType;
 import com.udacity.catpoint.security.service.SecurityService;
@@ -7,36 +8,37 @@ import com.udacity.catpoint.security.service.StyleService;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
+import java.util.Objects;
 
 /**
  * Panel that allows users to add sensors to their system. Sensors may be
  * manually set to "active" and "inactive" to test the system.
  */
-public class SensorPanel extends JPanel {
+public class SensorPanel extends JPanel implements StatusListener {
 
-    private SecurityService securityService;
+    private final SecurityService securityService;
 
-    private JLabel panelLabel = new JLabel("Sensor Management");
-    private JLabel newSensorName = new JLabel("Name:");
-    private JLabel newSensorType = new JLabel("Sensor Type:");
-    private JTextField newSensorNameField = new JTextField();
-    private JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
-    private JButton addNewSensorButton = new JButton("Add New Sensor");
+    private final JLabel newSensorName = new JLabel("Name:");
+    private final JLabel newSensorType = new JLabel("Sensor Type:");
+    private final JTextField newSensorNameField = new JTextField();
+    private final JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
+    private final JButton addNewSensorButton = new JButton("Add New Sensor");
 
-    private JPanel sensorListPanel;
-    private JPanel newSensorPanel;
+    private final JPanel sensorListPanel;
 
     public SensorPanel(SecurityService securityService) {
         super();
         setLayout(new MigLayout());
         this.securityService = securityService;
+        securityService.addStatusListener(this);
 
+        JLabel panelLabel = new JLabel("Sensor Management");
         panelLabel.setFont(StyleService.HEADING_FONT);
         addNewSensorButton.addActionListener(e ->
                 addSensor(new Sensor(newSensorNameField.getText(),
-                        SensorType.valueOf(newSensorTypeDropdown.getSelectedItem().toString()))));
+                        SensorType.valueOf(Objects.requireNonNull(newSensorTypeDropdown.getSelectedItem()).toString()))));
 
-        newSensorPanel = buildAddSensorPanel();
+        JPanel newSensorPanel = buildAddSensorPanel();
         sensorListPanel = new JPanel();
         sensorListPanel.setLayout(new MigLayout());
 
@@ -115,6 +117,17 @@ public class SensorPanel extends JPanel {
      */
     private void removeSensor(Sensor sensor) {
         securityService.removeSensor(sensor);
+        updateSensorList(sensorListPanel);
+    }
+
+    @Override
+    public void notify(AlarmStatus status) {}
+
+    @Override
+    public void catDetected(boolean catDetected) {}
+
+    @Override
+    public void sensorStatusChanged() {
         updateSensorList(sensorListPanel);
     }
 }
